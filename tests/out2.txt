@@ -1,0 +1,3 @@
+CC=gcc
+CFLAGS=-c -Wall -Werror -g
+thsh$ thsh$ 
