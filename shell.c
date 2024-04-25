@@ -1,29 +1,147 @@
-// PID: 9DigitPidNoSpacesOrDashes
+// PID: 730562988
 // I pledge the COMP 211 honor code.
 
 // All necessary libraries are included in shell.h
 #include "shell.h"
 
+
 void alloc_mem_for_argv(command_t* p_cmd) {
-    // TODO:
+    int argc = p_cmd->argc;
+    p_cmd->argv = (char**)malloc((argc + 1) * sizeof(char*));
+
+    if (p_cmd->argv == NULL) {
+        return;
+    }
+
+    for (int i = 0; i < argc; i++) {
+        p_cmd->argv[i] = (char*)malloc(MAX_ARG_LEN * sizeof(char));
+
+        if (p_cmd->argv[i] == NULL) {
+            return;
+        }
+    }
+
+    p_cmd->argv[argc] = NULL;
 }
 
 void cleanup(command_t* p_cmd) {
-    // TODO:
+    if (p_cmd->argv != NULL) {
+        for (int i = 0; p_cmd->argv[i] != NULL; i++) {
+            free(p_cmd->argv[i]);
+            p_cmd->argv[i] = NULL;
+        }
+
+        free(p_cmd->argv);
+        p_cmd->argv = NULL;
+    }
 }
 
 void parse(char* line, command_t* p_cmd) {
-    // TODO:
+    if (line == NULL) {
+        p_cmd->argc = 0;
+        p_cmd->argv = (char**)malloc(sizeof(char*));
+        p_cmd->argv[0] = NULL;
+        return;
+    }
+
+    char* line_copy = strdup(line);
+    if (line_copy == NULL) {
+        return;
+    }
+
+    char* token;
+    int argc = 0;
+    token = strtok(line_copy, " ");
+    while (token != NULL) {
+        argc++;
+        token = strtok(NULL, " ");
+    }
+
+    p_cmd->argc = argc;
+    p_cmd->argv = (char**)malloc((argc + 1) * sizeof(char*));
+    if (p_cmd->argv == NULL) {
+        free(line_copy);
+        return;
+    }
+
+    char* line_copy_ptr = line_copy;
+    int i = 0;
+    token = strtok(line_copy_ptr, " ");
+    while (token != NULL) {
+        p_cmd->argv[i] = (char*)malloc((strlen(token) + 1) * sizeof(char));
+        if (p_cmd->argv[i] == NULL) {
+            free(line_copy);
+            return;
+        }
+        strcpy(p_cmd->argv[i], token);
+        i++;
+        token = strtok(NULL, " ");
+    }
+    p_cmd->argv[argc] = NULL;
+
+    free(line_copy);
 }
+
 
 bool find_full_path(command_t* p_cmd) {
-    // TODO:
-    return true;
+    char* path_env = getenv("PATH");
+    if (path_env == NULL) {
+        return false;
+    }
+
+    char* path_copy = strdup(path_env);
+    if (path_copy == NULL) {
+        return false;
+    }
+
+    char* dir_path = strtok(path_copy, ":");
+    while (dir_path != NULL) {
+        char* full_path = (char*)malloc(strlen(dir_path) + strlen(p_cmd->argv[0]) + 2);
+        if (full_path == NULL) {
+            free(path_copy);
+            return false;
+        }
+
+        sprintf(full_path, "%s/%s", dir_path, p_cmd->argv[0]);
+        if (access(full_path, F_OK) == 0) {
+            free(p_cmd->argv[0]);
+            p_cmd->argv[0] = full_path;
+            free(path_copy);
+            return true;
+        }
+
+        free(full_path);
+        dir_path = strtok(NULL, ":");
+    }
+
+    free(path_copy);
+    return false;
 }
 
+
 int execute(command_t* p_cmd) {
-    // TODO:
-    return 0;
+    if (is_builtin(p_cmd)) {
+        return do_builtin(p_cmd);
+    }
+
+    if (!find_full_path(p_cmd)) {
+        printf("Command %s not found!\n", p_cmd->argv[0]);
+        return ERROR;
+    }
+
+    pid_t pid = fork();
+    if (pid == -1) {
+        perror("fork");
+        return ERROR;
+    } else if (pid == 0) {
+        execv(p_cmd->argv[0], p_cmd->argv);
+        perror("execv");
+        exit(EXIT_FAILURE);
+    } else {
+        int status;
+        waitpid(pid, &status, 0);
+        return SUCCESS;
+    }
 }
 
 bool is_builtin(command_t* p_cmd) {
