@@ -48,13 +48,14 @@ void parse(char* line, command_t* p_cmd) {
         return;
     }
 
-    char* token;
     int argc = 0;
-    token = strtok(line_copy, " ");
+    char* token = strtok(line_copy, " ");
     while (token != NULL) {
         argc++;
         token = strtok(NULL, " ");
     }
+
+    strtok(line_copy, " ");
 
     p_cmd->argc = argc;
     p_cmd->argv = (char**)malloc((argc + 1) * sizeof(char*));
@@ -63,21 +64,14 @@ void parse(char* line, command_t* p_cmd) {
         return;
     }
 
-    char* line_copy_ptr = line_copy;
     int i = 0;
-    token = strtok(line_copy_ptr, " ");
-    while (token != NULL) {
+    while ((token = strtok(NULL, " ")) != NULL) {
         p_cmd->argv[i] = strdup(token);
         if (p_cmd->argv[i] == NULL) {
-            for (int j = 0; j < i; j++) {
-                free(p_cmd->argv[j]);
-            }
-            free(p_cmd->argv);
             free(line_copy);
             return;
         }
         i++;
-        token = strtok(NULL, " ");
     }
     p_cmd->argv[argc] = NULL;
 
