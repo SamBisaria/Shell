@@ -68,6 +68,7 @@ void parse(char* line, command_t* p_cmd) {
     line_copy = strdup(line);
     if (line_copy == NULL) {
         free(p_cmd->argv);
+        p_cmd->argv = NULL;
         return;
     }
 
@@ -80,6 +81,7 @@ void parse(char* line, command_t* p_cmd) {
                 free(p_cmd->argv[j]);
             }
             free(p_cmd->argv);
+            p_cmd->argv = NULL;
             free(line_copy);
             return;
         }
@@ -87,7 +89,6 @@ void parse(char* line, command_t* p_cmd) {
         token = strtok(NULL, " ");
     }
     p_cmd->argv[argc] = NULL;
-
     free(line_copy);
 }
 
