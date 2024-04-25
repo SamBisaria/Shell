@@ -55,8 +55,6 @@ void parse(char* line, command_t* p_cmd) {
         token = strtok(NULL, " ");
     }
 
-    strtok(line_copy, " ");
-
     p_cmd->argc = argc;
     p_cmd->argv = (char**)malloc((argc + 1) * sizeof(char*));
     if (p_cmd->argv == NULL) {
@@ -64,14 +62,26 @@ void parse(char* line, command_t* p_cmd) {
         return;
     }
 
+    line_copy = strdup(line);
+    if (line_copy == NULL) {
+        free(p_cmd->argv);
+        return;
+    }
+
     int i = 0;
-    while ((token = strtok(NULL, " ")) != NULL) {
+    token = strtok(line_copy, " ");
+    while (token != NULL) {
         p_cmd->argv[i] = strdup(token);
         if (p_cmd->argv[i] == NULL) {
+            for (int j = 0; j < i; j++) {
+                free(p_cmd->argv[j]);
+            }
+            free(p_cmd->argv);
             free(line_copy);
             return;
         }
         i++;
+        token = strtok(NULL, " ");
     }
     p_cmd->argv[argc] = NULL;
 
