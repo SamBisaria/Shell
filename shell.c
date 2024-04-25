@@ -39,6 +39,9 @@ void parse(char* line, command_t* p_cmd) {
     if (line == NULL) {
         p_cmd->argc = 0;
         p_cmd->argv = (char**)malloc(sizeof(char*));
+        if (p_cmd->argv == NULL) {
+            return;
+        }
         p_cmd->argv[0] = NULL;
         return;
     }
