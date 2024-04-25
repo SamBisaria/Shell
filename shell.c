@@ -4,16 +4,16 @@
 // All necessary libraries are included in shell.h
 #include "shell.h"
 
-void alloc_mem_for_argv(command_t *p_cmd) {
+void alloc_mem_for_argv(command_t* p_cmd) {
     int argc = p_cmd->argc;
-    p_cmd->argv = (char **) malloc((argc + 1) * sizeof(char *));
+    p_cmd->argv = (char**)malloc((argc + 1) * sizeof(char*));
 
     if (p_cmd->argv == NULL) {
         return;
     }
 
     for (int i = 0; i < argc; i++) {
-        p_cmd->argv[i] = (char *) malloc(MAX_ARG_LEN * sizeof(char));
+        p_cmd->argv[i] = (char*)malloc(MAX_ARG_LEN * sizeof(char));
 
         if (p_cmd->argv[i] == NULL) {
             return;
@@ -23,7 +23,7 @@ void alloc_mem_for_argv(command_t *p_cmd) {
     p_cmd->argv[argc] = NULL;
 }
 
-void cleanup(command_t *p_cmd) {
+void cleanup(command_t* p_cmd) {
     if (p_cmd->argv != NULL) {
         for (int i = 0; p_cmd->argv[i] != NULL; i++) {
             free(p_cmd->argv[i]);
@@ -35,37 +35,37 @@ void cleanup(command_t *p_cmd) {
     }
 }
 
-void parse(char *line, command_t *p_cmd) {
+void parse(char* line, command_t* p_cmd) {
     if (line == NULL) {
         p_cmd->argc = 0;
-        p_cmd->argv = (char **) malloc(sizeof(char *));
+        p_cmd->argv = (char**)malloc(sizeof(char*));
         p_cmd->argv[0] = NULL;
         return;
     }
 
-    char *line_copy = strdup(line);
+    char* line_copy = strdup(line);
     if (line_copy == NULL) {
         return;
     }
 
-    char *token;
+    char* token;
     int argc = 0;
-    token = strtok(line_copy, " ");
+    token = strtok(line_copy, " \t\r\n\v\f");
     while (token != NULL) {
         argc++;
-        token = strtok(NULL, " ");
+        token = strtok(NULL, " \t\r\n\v\f");
     }
 
     p_cmd->argc = argc;
-    p_cmd->argv = (char **) malloc((argc + 1) * sizeof(char *));
+    p_cmd->argv = (char**)malloc((argc + 1) * sizeof(char*));
     if (p_cmd->argv == NULL) {
         free(line_copy);
         return;
     }
 
-    char *line_copy_ptr = line_copy;
+    char* line_copy_ptr = line_copy;
     int i = 0;
-    token = strtok(line_copy_ptr, " ");
+    token = strtok(line_copy_ptr, " \t\r\n\v\f");
     while (token != NULL) {
         p_cmd->argv[i] = strdup(token);
         if (p_cmd->argv[i] == NULL) {
@@ -73,27 +73,28 @@ void parse(char *line, command_t *p_cmd) {
             return;
         }
         i++;
-        token = strtok(NULL, " ");
+        token = strtok(NULL, " \t\r\n\v\f");
     }
     p_cmd->argv[argc] = NULL;
 
     free(line_copy);
 }
 
-bool find_full_path(command_t *p_cmd) {
-    char *path_env = getenv("PATH");
+bool find_full_path(command_t* p_cmd) {
+    char* path_env = getenv("PATH");
     if (path_env == NULL) {
         return false;
     }
 
-    char *path_copy = strdup(path_env);
+    char* path_copy = strdup(path_env);
     if (path_copy == NULL) {
         return false;
     }
 
-    char *dir_path = strtok(path_copy, ":");
+    char* dir_path = strtok(path_copy, ":");
     while (dir_path != NULL) {
-        char *full_path = (char *) malloc(strlen(dir_path) + strlen(p_cmd->argv[0]) + 2);
+        char* full_path =
+            (char*)malloc(strlen(dir_path) + strlen(p_cmd->argv[0]) + 2);
         if (full_path == NULL) {
             free(path_copy);
             return false;
@@ -115,7 +116,7 @@ bool find_full_path(command_t *p_cmd) {
     return false;
 }
 
-int execute(command_t *p_cmd) {
+int execute(command_t* p_cmd) {
     if (is_builtin(p_cmd)) {
         return do_builtin(p_cmd);
     }
@@ -140,25 +141,25 @@ int execute(command_t *p_cmd) {
     }
 }
 
-bool is_builtin(command_t *p_cmd) {
+bool is_builtin(command_t* p_cmd) {
     // Do not modify
-    char *executable = p_cmd->argv[0];
+    char* executable = p_cmd->argv[0];
     if (strcmp(executable, "cd") == 0 || strcmp(executable, "exit") == 0) {
         return true;
     }
     return false;
 }
 
-int do_builtin(command_t *p_cmd) {
+int do_builtin(command_t* p_cmd) {
     // Do not modify
     if (strcmp(p_cmd->argv[0], "exit") == 0) {
         exit(SUCCESS);
     }
 
     // cd
-    if (p_cmd->argc == 1) {// cd with no arguments
+    if (p_cmd->argc == 1) {  // cd with no arguments
         return chdir(getenv("HOME"));
-    } else if (p_cmd->argc == 2) {// cd with 1 arg
+    } else if (p_cmd->argc == 2) {  // cd with 1 arg
         return chdir(p_cmd->argv[1]);
     } else {
         fprintf(stderr, "cd: Too many arguments\n");
