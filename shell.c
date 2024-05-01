@@ -65,6 +65,13 @@ void parse(char *line, command_t *p_cmd) {
         return;
     }
 
+    line_copy = strdup(line);
+    if (line_copy == NULL) {
+        free(p_cmd->argv);
+        p_cmd->argv = NULL;
+        return;
+    }
+
     int i = 0;
     token = strtok(line_copy, " ");
     while (token != NULL) {
@@ -97,9 +104,11 @@ bool find_full_path(command_t *p_cmd) {
     }
 
     char *dir_path = strtok(path_copy, ":");
+    bool found = false;
+    char *full_path = NULL;
+
     while (dir_path != NULL) {
-        char *full_path =
-            (char *) malloc(strlen(dir_path) + strlen(p_cmd->argv[0]) + 2);
+        full_path = (char *) malloc(strlen(dir_path) + strlen(p_cmd->argv[0]) + 2);
         if (full_path == NULL) {
             free(path_copy);
             return false;
@@ -109,8 +118,8 @@ bool find_full_path(command_t *p_cmd) {
         if (access(full_path, F_OK) == 0) {
             free(p_cmd->argv[0]);
             p_cmd->argv[0] = full_path;
-            free(path_copy);
-            return true;
+            found = true;
+            break;
         }
 
         free(full_path);
@@ -118,7 +127,15 @@ bool find_full_path(command_t *p_cmd) {
     }
 
     free(path_copy);
-    return false;
+
+    if (found) {
+        return true;
+    } else {
+        if (full_path != NULL) {
+            free(full_path);
+        }
+        return false;
+    }
 }
 
 int execute(command_t *p_cmd) {
