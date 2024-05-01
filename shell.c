@@ -125,42 +125,29 @@ bool find_full_path(command_t *p_cmd) {
     free(path_copy);
     return false;
 }
-
-bool find_full_path(command_t *p_cmd) {
-    char *path_env = getenv("PATH");
-    if (path_env == NULL) {
-        return false;
+int execute(command_t *p_cmd) {
+    if (is_builtin(p_cmd)) {
+        return do_builtin(p_cmd);
     }
 
-    char *path_copy = strdup(path_env);
-    if (path_copy == NULL) {
-        return false;
+    if (!find_full_path(p_cmd)) {
+        printf("Command %s not found!\n", p_cmd->argv[0]);
+        return ERROR;
     }
 
-    char *dir_path = strtok(path_copy, ":");
-    while (dir_path != NULL) {
-        char *full_path =
-            (char *) malloc(strlen(dir_path) + strlen(p_cmd->argv[0]) + 2);
-        if (full_path == NULL) {
-            free(path_copy);
-            return false;
-        }
-
-        sprintf(full_path, "%s/%s", dir_path, p_cmd->argv[0]);
-        if (access(full_path, F_OK) == 0) {
-            if (p_cmd->argv[0] != NULL) free(p_cmd->argv[0]);// free the original memory
-            p_cmd->argv[0] = full_path;
-            free(path_copy);
-            return true;
-        } else {
-            free(full_path);
-        }
-
-        dir_path = strtok(NULL, ":");
+    pid_t pid = fork();
+    if (pid == -1) {
+        perror("fork");
+        return ERROR;
+    } else if (pid == 0) {
+        execv(p_cmd->argv[0], p_cmd->argv);
+        printf("Command %s not found!\n", p_cmd->argv[0]);
+        exit(EXIT_FAILURE);
+    } else {
+        int status;
+        waitpid(pid, &status, 0);
+        return SUCCESS;
     }
-
-    free(path_copy);
-    return false;
 }
 
 bool is_builtin(command_t *p_cmd) {
