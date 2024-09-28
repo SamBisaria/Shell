@@ -1,1 +1,1 @@
-Simple Unix shell made with Java
+Simple Unix shell made with C
